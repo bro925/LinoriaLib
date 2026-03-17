@@ -90,6 +90,20 @@ local function GetTeamsString()
     return TeamList;
 end;
 
+local function IsTyping()
+    local focused = InputService:GetFocusedTextBox()
+    if focused then
+        return true
+    end
+    
+    local chat = game:GetService("Chat"):FindFirstChild("ChatChannelParentFrame")
+    if chat and chat.Visible then
+        return true
+    end
+    
+    return false
+end
+
 function Library:SafeCallback(f, ...)
     if (not f) then
         return;
@@ -1246,6 +1260,10 @@ do
         local Picking = false;
 
         PickOuter.InputBegan:Connect(function(Input)
+            if IsTyping() then
+                return
+            end
+                
             if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
                 Picking = true;
 
@@ -1301,6 +1319,10 @@ do
         end);
 
         Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
+            if IsTyping() then
+                return
+            end
+                    
             if (not Picking) then
                 if KeyPicker.Mode == 'Toggle' then
                     local Key = KeyPicker.Value;
@@ -3622,6 +3644,9 @@ function Library:CreateWindow(...)
     end
 
     Library:GiveSignal(InputService.InputBegan:Connect(function(Input, Processed)
+        if IsTyping() then
+            return
+        end
         if type(Library.ToggleKeybind) == 'table' and Library.ToggleKeybind.Type == 'KeyPicker' then
             if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode.Name == Library.ToggleKeybind.Value then
                 task.spawn(Library.Toggle)
