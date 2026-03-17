@@ -352,6 +352,17 @@ function Library:RemoveFromRegistry(Instance)
     end;
 end;
 
+function Library:UpdateKeybindFrame()
+    task.spawn(function()
+        task.wait(1)
+        for _, Option in pairs(Options) do
+            if Option and Option.Type == 'KeyPicker' and Option.Update then
+                Option:Update()
+            end
+        end
+    end)
+end
+
 function Library:UpdateColorsUsingRegistry()
     -- TODO: Could have an 'active' list of objects
     -- where the active list only contains Visible objects.
@@ -1149,29 +1160,35 @@ do
             if Info.NoUI then
                 return;
             end;
-
+        
             local State = KeyPicker:GetState();
-
-            ContainerLabel.Text = string.format('[%s] %s (%s)', KeyPicker.Value, Info.Text, KeyPicker.Mode);
-
-            ContainerLabel.Visible = true;
-            ContainerLabel.TextColor3 = State and Library.AccentColor or Library.FontColor;
-
-            Library.RegistryMap[ContainerLabel].Properties.TextColor3 = State and 'AccentColor' or 'FontColor';
-
-            local YSize = 0
-            local XSize = 0
-
-            for _, Label in next, Library.KeybindContainer:GetChildren() do
-                if Label:IsA('TextLabel') and Label.Visible then
-                    YSize = YSize + 18;
-                    if (Label.TextBounds.X > XSize) then
-                        XSize = Label.TextBounds.X
-                    end
+        
+            if KeyPicker.Value ~= "None" then
+                ContainerLabel.Text = string.format('[%s] %s (%s)', KeyPicker.Value, Info.Text, KeyPicker.Mode);
+                ContainerLabel.Visible = true;
+                ContainerLabel.TextColor3 = State and Library.AccentColor or Library.FontColor;
+                Library.RegistryMap[ContainerLabel].Properties.TextColor3 = State and 'AccentColor' or 'FontColor';
+            else
+                ContainerLabel.Visible = false;
+            end
+        
+            task.spawn(function()
+                task.wait(1)
+                
+                local YSize = 0
+                local XSize = 0
+        
+                for _, Label in next, Library.KeybindContainer:GetChildren() do
+                    if Label:IsA('TextLabel') and Label.Visible then
+                        YSize = YSize + 18;
+                        if (Label.TextBounds.X > XSize) then
+                            XSize = Label.TextBounds.X
+                        end
+                    end;
                 end;
-            end;
-
-            Library.KeybindFrame.Size = UDim2.new(0, math.max(XSize + 10, 210), 0, YSize + 23)
+        
+                Library.KeybindFrame.Size = UDim2.new(0, math.max(XSize + 10, 210), 0, YSize + 23)
+            end)
         end;
 
         function KeyPicker:GetState()
@@ -1201,6 +1218,7 @@ do
             KeyPicker.Value = Key;
             ModeButtons[Mode]:Select();
             KeyPicker:Update();
+            Library:UpdateKeybindFrame();
         end;
 
         function KeyPicker:OnClick(Callback)
@@ -1271,6 +1289,7 @@ do
 
                     Library:SafeCallback(KeyPicker.ChangedCallback, Input.KeyCode or Input.UserInputType)
                     Library:SafeCallback(KeyPicker.Changed, Input.KeyCode or Input.UserInputType)
+                    Library:UpdateKeybindFrame();
 
                     Library:AttemptSave();
 
