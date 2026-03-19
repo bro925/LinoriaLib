@@ -1377,6 +1377,60 @@ end;
 local BaseGroupbox = {};
 
 do
+    function Library:RemoveButton(button)
+        if not button then return end
+        pcall(function()
+            if button.Outer and button.Outer.Parent then
+                button.Outer:Destroy()
+            end
+        end)
+    end
+    
+    function Library:RemoveLabel(label)
+        if not label then return end
+        pcall(function()
+            if label.TextLabel and label.TextLabel.Parent then
+                label.TextLabel.Parent:Destroy()
+            end
+        end)
+    end
+    
+    function Library:RemoveDivider(divider)
+        if not divider then return end
+        pcall(function()
+            if divider.Container and divider.Container.Parent then
+                divider.Container.Parent:Destroy()
+            end
+        end)
+    end
+    
+    function Library:RemoveToggle(toggle)
+        if not toggle then return end
+        pcall(function()
+            if toggle.TextLabel and toggle.TextLabel.Parent and toggle.TextLabel.Parent.Parent then
+                toggle.TextLabel.Parent.Parent:Destroy()
+            end
+        end)
+    end
+    
+    function Library:RemoveElement(element)
+        if not element then return end
+        
+        if element.Outer then
+            -- button
+            Library:RemoveButton(element)
+        elseif element.TextLabel and not element.Outer then
+            -- label
+            Library:RemoveLabel(element)
+        elseif element.Container then
+            -- divider
+            Library:RemoveDivider(element)
+        elseif element.Type == "Toggle" then
+            -- toggle
+            Library:RemoveToggle(element)
+        end
+    end
+    
     local Funcs = {};
 
     function Funcs:AddBlank(Size)
@@ -1668,58 +1722,6 @@ do
 
         Groupbox:AddBlank(9);
         Groupbox:Resize();
-    end
-
-    function Library:RemoveButton(button)
-        if not button then return end
-        pcall(function()
-            if button.Outer and button.Outer.Parent then
-                button.Outer:Destroy()
-            end
-        end)
-    end
-    
-    function Library:RemoveLabel(label)
-        if not label then return end
-        pcall(function()
-            if label.TextLabel and label.TextLabel.Parent then
-                label.TextLabel.Parent:Destroy()
-            end
-        end)
-    end
-    
-    function Library:RemoveDivider(divider)
-        if not divider then return end
-        pcall(function()
-            if divider.Container and divider.Container.Parent then
-                divider.Container.Parent:Destroy()
-            end
-        end)
-    end
-    
-    function Library:RemoveToggle(toggle)
-        if not toggle then return end
-        pcall(function()
-            if toggle.TextLabel and toggle.TextLabel.Parent and toggle.TextLabel.Parent.Parent then
-                toggle.TextLabel.Parent.Parent:Destroy()
-            end
-        end)
-    end
-    
-    function Library:RemoveElement(element)
-        if not element then return end
-        
-        local elementType = element.Type or "unknown"
-        
-        if elementType == "Button" or (element.Outer) then
-            Library:RemoveButton(element)
-        elseif elementType == "Label" or (element.TextLabel and not element.Outer) then
-            Library:RemoveLabel(element)
-        elseif elementType == "Divider" or (element.Container) then
-            Library:RemoveDivider(element)
-        elseif elementType == "Toggle" then
-            Library:RemoveToggle(element)
-        end
     end
 
     function Funcs:AddInput(Idx, Info)
