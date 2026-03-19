@@ -1670,6 +1670,58 @@ do
         Groupbox:Resize();
     end
 
+    function Library:RemoveButton(button)
+        if not button then return end
+        pcall(function()
+            if button.Outer and button.Outer.Parent then
+                button.Outer:Destroy()
+            end
+        end)
+    end
+    
+    function Library:RemoveLabel(label)
+        if not label then return end
+        pcall(function()
+            if label.TextLabel and label.TextLabel.Parent then
+                label.TextLabel.Parent:Destroy()
+            end
+        end)
+    end
+    
+    function Library:RemoveDivider(divider)
+        if not divider then return end
+        pcall(function()
+            if divider.Container and divider.Container.Parent then
+                divider.Container.Parent:Destroy()
+            end
+        end)
+    end
+    
+    function Library:RemoveToggle(toggle)
+        if not toggle then return end
+        pcall(function()
+            if toggle.TextLabel and toggle.TextLabel.Parent and toggle.TextLabel.Parent.Parent then
+                toggle.TextLabel.Parent.Parent:Destroy()
+            end
+        end)
+    end
+    
+    function Library:RemoveElement(element)
+        if not element then return end
+        
+        local elementType = element.Type or "unknown"
+        
+        if elementType == "Button" or (element.Outer) then
+            Library:RemoveButton(element)
+        elseif elementType == "Label" or (element.TextLabel and not element.Outer) then
+            Library:RemoveLabel(element)
+        elseif elementType == "Divider" or (element.Container) then
+            Library:RemoveDivider(element)
+        elseif elementType == "Toggle" then
+            Library:RemoveToggle(element)
+        end
+    end
+
     function Funcs:AddInput(Idx, Info)
         assert(Info.Text, 'AddInput: Missing `Text` string.')
 
