@@ -3612,40 +3612,6 @@ function Library:CreateWindow(...)
     local Toggled = false;
     local Fading = false;
 
-    function Library:SetWindowBackground(Window, ImageUrl, Transparency)
-        if not Window or not Window.Holder then return end
-        
-        local InnerFrame = Window.Holder:FindFirstChild("Inner")
-        if not InnerFrame then return end
-        
-        local MainSection = InnerFrame:FindFirstChild("MainSectionOuter")
-        if not MainSection then return end
-        
-        local Background = MainSection:FindFirstChild("WindowBackground")
-        if Background then
-            Background:Destroy()
-        end
-        
-        Background = Library:Create('ImageLabel', {
-            Name = "WindowBackground",
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 1, 0),
-            Position = UDim2.new(0, 0, 0, 0),
-            Image = ImageUrl,
-            ImageTransparency = Transparency or 0,
-            ZIndex = 0,
-            Parent = MainSection
-        })
-        
-        for _, child in ipairs(MainSection:GetChildren()) do
-            if child ~= Background and child:IsA("GuiObject") then
-                child.ZIndex = child.ZIndex + 1
-            end
-        end
-        
-        return Background
-    end
-
     function Library:Toggle()
         if Fading then
             return;
@@ -3785,6 +3751,60 @@ local function OnPlayerChange()
         end;
     end;
 end;
+
+function Library:SetWindowBackground(Window, ImageUrl, Transparency)
+    if not Window or not Window.Holder then 
+        warn("Window not found")
+        return 
+    end
+    
+    local Outer = Window.Holder
+    local Inner = Outer:FindFirstChild("Inner")
+    if not Inner then 
+        warn("Inner frame not found")
+        return 
+    end
+    
+    local MainSectionOuter = Inner:FindFirstChild("MainSectionOuter")
+    if not MainSectionOuter then 
+        warn("MainSectionOuter not found")
+        return 
+    end
+    
+    local MainSectionInner = MainSectionOuter:FindFirstChild("MainSectionInner")
+    if not MainSectionInner then
+        warn("MainSectionInner not found")
+        return
+    end
+    
+    local Background = MainSectionInner:FindFirstChild("WindowBackground")
+    if Background then
+        Background:Destroy()
+    end
+    
+    Background = Library:Create('ImageLabel', {
+        Name = "WindowBackground",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        Image = ImageUrl,
+        ImageTransparency = Transparency or 0,
+        ZIndex = 0,
+        Parent = MainSectionInner
+    })
+    
+    Background:MoveToFront()
+    
+    for _, child in ipairs(MainSectionInner:GetChildren()) do
+        if child ~= Background and child:IsA("GuiObject") then
+            if child.ZIndex <= Background.ZIndex then
+                child.ZIndex = child.ZIndex + 1
+            end
+        end
+    end
+    
+    return Background
+end
 
 Players.PlayerAdded:Connect(OnPlayerChange);
 Players.PlayerRemoving:Connect(OnPlayerChange);
