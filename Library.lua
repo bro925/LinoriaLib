@@ -405,6 +405,16 @@ function Library:GiveSignal(Signal)
 end
 
 function Library:Unload()
+    Library.CursorLoop = false
+
+    if Library.CursorObjects then
+        pcall(function()
+            Library.CursorObjects.Cursor:Remove()
+            Library.CursorObjects.CursorOutline:Remove()
+        end)
+        Library.CursorObjects = nil
+    end
+    
     -- Unload all of the signals
     for Idx = #Library.Signals, 1, -1 do
         local Connection = table.remove(Library.Signals, Idx)
@@ -3602,6 +3612,40 @@ function Library:CreateWindow(...)
     local Toggled = false;
     local Fading = false;
 
+    function Library:SetWindowBackground(Window, ImageUrl, Transparency)
+        if not Window or not Window.Holder then return end
+        
+        local InnerFrame = Window.Holder:FindFirstChild("Inner")
+        if not InnerFrame then return end
+        
+        local MainSection = InnerFrame:FindFirstChild("MainSectionOuter")
+        if not MainSection then return end
+        
+        local Background = MainSection:FindFirstChild("WindowBackground")
+        if Background then
+            Background:Destroy()
+        end
+        
+        Background = Library:Create('ImageLabel', {
+            Name = "WindowBackground",
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            Position = UDim2.new(0, 0, 0, 0),
+            Image = ImageUrl,
+            ImageTransparency = Transparency or 0,
+            ZIndex = 0,
+            Parent = MainSection
+        })
+        
+        for _, child in ipairs(MainSection:GetChildren()) do
+            if child ~= Background and child:IsA("GuiObject") then
+                child.ZIndex = child.ZIndex + 1
+            end
+        end
+        
+        return Background
+    end
+
     function Library:Toggle()
         if Fading then
             return;
@@ -3616,44 +3660,59 @@ function Library:CreateWindow(...)
             -- A bit scuffed, but if we're going from not toggled -> toggled we want to show the frame immediately so that the fade is visible.
             Outer.Visible = true;
 
+            if not Library.CursorObjects then
+                Library.CursorObjects = {
+                    Cursor = Drawing.new('Triangle'),
+                    CursorOutline = Drawing.new('Triangle')
+                }
+                Library.CursorObjects.Cursor.Thickness = 1
+                Library.CursorObjects.Cursor.Filled = true
+                Library.CursorObjects.CursorOutline.Thickness = 1
+                Library.CursorObjects.CursorOutline.Filled = false
+                Library.CursorObjects.CursorOutline.Color = Color3.new(0, 0, 0)
+            end
+            
+            local Cursor = Library.CursorObjects.Cursor
+            local CursorOutline = Library.CursorObjects.CursorOutline
+            
+            Cursor.Visible = true
+            CursorOutline.Visible = true
+            
+            if Library.CursorLoop then
+                Library.CursorLoop = false
+                task.wait(0.1)
+            end
+            
+            Library.CursorLoop = true
+            
             task.spawn(function()
-                -- TODO: add cursor fade?
-                local State = InputService.MouseIconEnabled;
-
-                local Cursor = Drawing.new('Triangle');
-                Cursor.Thickness = 1;
-                Cursor.Filled = true;
-                Cursor.Visible = true;
-
-                local CursorOutline = Drawing.new('Triangle');
-                CursorOutline.Thickness = 1;
-                CursorOutline.Filled = false;
-                CursorOutline.Color = Color3.new(0, 0, 0);
-                CursorOutline.Visible = true;
-
-                while Toggled and ScreenGui.Parent do
-                    InputService.MouseIconEnabled = false;
-
-                    local mPos = InputService:GetMouseLocation();
-
-                    Cursor.Color = Library.AccentColor;
-
-                    Cursor.PointA = Vector2.new(mPos.X, mPos.Y);
-                    Cursor.PointB = Vector2.new(mPos.X + 16, mPos.Y + 6);
-                    Cursor.PointC = Vector2.new(mPos.X + 6, mPos.Y + 16);
-
-                    CursorOutline.PointA = Cursor.PointA;
-                    CursorOutline.PointB = Cursor.PointB;
-                    CursorOutline.PointC = Cursor.PointC;
-
-                    RenderStepped:Wait();
-                end;
-
-                InputService.MouseIconEnabled = State;
-
-                Cursor:Remove();
-                CursorOutline:Remove();
-            end);
+                local State = InputService.MouseIconEnabled
+                
+                while Toggled and Library.CursorLoop and ScreenGui.Parent do
+                    InputService.MouseIconEnabled = false
+                    
+                    local mPos = InputService:GetMouseLocation()
+                    
+                    Cursor.Color = Library.AccentColor
+                    
+                    Cursor.PointA = Vector2.new(mPos.X, mPos.Y)
+                    Cursor.PointB = Vector2.new(mPos.X + 16, mPos.Y + 6)
+                    Cursor.PointC = Vector2.new(mPos.X + 6, mPos.Y + 16)
+                    
+                    CursorOutline.PointA = Cursor.PointA
+                    CursorOutline.PointB = Cursor.PointB
+                    CursorOutline.PointC = Cursor.PointC
+                    
+                    RenderStepped:Wait()
+                end
+                
+                InputService.MouseIconEnabled = State
+                Cursor.Visible = false
+                CursorOutline.Visible = false
+                Library.CursorLoop = false
+            end)
+        else
+            Library.CursorLoop = false
         end;
 
         for _, Desc in next, Outer:GetDescendants() do
